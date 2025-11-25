@@ -74,7 +74,7 @@ $ pnpm dlx @layerzerolabs/verify-contract -n <NETWORK_NAME> -u <API_URL> -k <API
 $ pnpm dlx @layerzerolabs/verify-contract -n bsc -u "https://api.etherscan.io/v2/api?chainid=56" -k <API Key> --contracts MeetAdapter
 
 # ethereum
-$ pnpm dlx @layerzerolabs/verify-contract -n bsc-testnet -u "https://api.etherscan.io/v2/api?chainid=1" -k <API Key> --contracts Meet
+$ pnpm dlx @layerzerolabs/verify-contract -n ethereum -u "https://api.etherscan.io/v2/api?chainid=1" -k <API Key> --contracts Meet
 ```
 
 
@@ -93,9 +93,9 @@ Submit all the transactions to complete wiring. After all transactions confirm, 
 # Send Tokens
 
 ```bash
-# Send 100 $IDOL from **BSC** to **Ethereum**
-$ pnpm hardhat lz:oft:send --src-eid 30102 --dst-eid 30101 --amount 100 --to xx
+# Send 1 $IDOL from **BSC** to **Ethereum**
+$ pnpm hardhat lz:oft:send --src-eid 30102 --dst-eid 30101 --amount 1 --to xx
 
-# Send 10 $IDOL from **Ethereum** to **BSC**
-$ pnpm hardhat lz:oft:send --src-eid 30101 --dst-eid 30102 --amount 10 --to xx
+# Send 1 $IDOL from **Ethereum** to **BSC**
+$ pnpm hardhat lz:oft:send --src-eid 30101 --dst-eid 30102 --amount 1 --to xx
 ```
