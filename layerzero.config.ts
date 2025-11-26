@@ -52,7 +52,7 @@ const pathways: TwoWayConfig[] = [
         bscContract, // Chain A contract
         ethereumContract, // Chain B contract
         // https://docs.layerzero.network/v2/deployments/dvn-addresses
-        [['LayerZero Labs', 'Stargate'], []], // [ requiredDVN[], [ optionalDVN[], threshold ] ]
+        [['LayerZero Labs', 'Nethermind'], []], // [ requiredDVN[], [ optionalDVN[], threshold ] ]
         [15, 15], // [A to B confirmations, B to A confirmations]
         [EVM_ENFORCED_OPTIONS, EVM_ENFORCED_OPTIONS], // Chain B enforcedOptions, Chain A enforcedOptions
     ],

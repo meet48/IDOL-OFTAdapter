@@ -17,6 +17,9 @@ import { MessagingFee, MessagingReceipt } from "@layerzerolabs/oft-evm/contracts
 import { OFTMsgCodec } from "@layerzerolabs/oft-evm/contracts/libs/OFTMsgCodec.sol";
 import { OFTComposeMsgCodec } from "@layerzerolabs/oft-evm/contracts/libs/OFTComposeMsgCodec.sol";
 
+import { MeetAdapter } from "../../contracts/MeetAdapter.sol";
+import { Meet } from "../../contracts/Meet.sol";
+
 // OZ imports
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -33,8 +36,8 @@ contract MeetAdapterTest is TestHelperOz5 {
     uint32 private bEid = 2;
 
     ERC20Mock private aToken;
-    OFTAdapterMock private aOFTAdapter;
-    OFTMock private bOFT;
+    MeetAdapter private aOFTAdapter;
+    Meet private bOFT;
 
     address private userA = address(0x1);
     address private userB = address(0x2);
@@ -49,16 +52,16 @@ contract MeetAdapterTest is TestHelperOz5 {
 
         aToken = ERC20Mock(_deployOApp(type(ERC20Mock).creationCode, abi.encode("Token", "TOKEN")));
 
-        aOFTAdapter = OFTAdapterMock(
+        aOFTAdapter = MeetAdapter(
             _deployOApp(
-                type(OFTAdapterMock).creationCode,
+                type(MeetAdapter).creationCode,
                 abi.encode(address(aToken), address(endpoints[aEid]), address(this))
             )
         );
 
-        bOFT = OFTMock(
+        bOFT = Meet(
             _deployOApp(
-                type(OFTMock).creationCode,
+                type(Meet).creationCode,
                 abi.encode("Token", "TOKEN", address(endpoints[bEid]), address(this))
             )
         );
@@ -176,5 +179,42 @@ contract MeetAdapterTest is TestHelperOz5 {
         assertEq(composer.extraData(), composerMsg_); // default to setting the extraData to the message as well to test
     }
 
-    // TODO import the rest of oft tests?
+    function test_pause_unpause() public {
+        uint256 tokensToSend = 1 ether;
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        SendParam memory sendParam = SendParam(
+            bEid,
+            addressToBytes32(userB),
+            tokensToSend,
+            tokensToSend,
+            options,
+            "",
+            ""
+        );
+        MessagingFee memory fee = aOFTAdapter.quoteSend(sendParam, false);
+
+        vm.prank(userA);
+        aToken.approve(address(aOFTAdapter), tokensToSend);
+
+        // Pause the adapter
+        aOFTAdapter.pause();
+
+        // Verify send reverts when paused
+        vm.prank(userA);
+        // Expecting OpenZeppelin 5.0 Pausable error
+        vm.expectRevert(abi.encodeWithSignature("EnforcedPause()"));
+        aOFTAdapter.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
+
+        // Unpause the adapter
+        aOFTAdapter.unpause();
+
+        // Verify send succeeds when unpaused
+        vm.prank(userA);
+        aOFTAdapter.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
+        verifyPackets(bEid, addressToBytes32(address(bOFT)));
+
+        assertEq(aToken.balanceOf(userA), initialBalance - tokensToSend);
+        assertEq(aToken.balanceOf(address(aOFTAdapter)), tokensToSend);
+        assertEq(bOFT.balanceOf(userB), tokensToSend);
+    }
 }

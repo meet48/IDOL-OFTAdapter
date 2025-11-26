@@ -28,9 +28,9 @@ describe('MeetAdapter Test', function () {
         // Contract factory for our tested contract
         //
         // We are using a derived contract that exposes a mint() function for testing purposes
-        MeetAdapter = await ethers.getContractFactory('MeetAdapterMock')
+        MeetAdapter = await ethers.getContractFactory('MeetAdapter')
 
-        Meet = await ethers.getContractFactory('MeetMock')
+        Meet = await ethers.getContractFactory('Meet')
 
         ERC20Mock = await ethers.getContractFactory('ERC20Mock')
 
@@ -111,5 +111,47 @@ describe('MeetAdapter Test', function () {
         expect(finalBalanceA).eql(initialAmount.sub(tokensToSend))
         expect(finalBalanceAdapter).eql(tokensToSend)
         expect(finalBalanceB).eql(tokensToSend)
+    })
+
+    it('should pause and unpause the adapter', async function () {
+        const initialAmount = ethers.utils.parseEther('100')
+        await token.mint(ownerA.address, initialAmount)
+
+        const tokensToSend = ethers.utils.parseEther('1')
+        const options = Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex().toString()
+        const sendParam = [
+            eidB,
+            ethers.utils.zeroPad(ownerB.address, 32),
+            tokensToSend,
+            tokensToSend,
+            options,
+            '0x',
+            '0x',
+        ]
+
+        const [nativeFee] = await myOFTAdapter.quoteSend(sendParam, false)
+        await token.connect(ownerA).approve(myOFTAdapter.address, tokensToSend)
+
+        // Pause the adapter
+        await myOFTAdapter.connect(ownerA).pause()
+
+        // Verify send reverts when paused
+        let failed = false
+        try {
+            await myOFTAdapter.send(sendParam, [nativeFee, 0], ownerA.address, { value: nativeFee })
+        } catch (e: any) {
+            failed = true
+            expect(e.message).to.include('EnforcedPause')
+        }
+        expect(failed).to.be.true
+
+        // Unpause the adapter
+        await myOFTAdapter.connect(ownerA).unpause()
+
+        // Verify send succeeds when unpaused
+        await myOFTAdapter.send(sendParam, [nativeFee, 0], ownerA.address, { value: nativeFee })
+
+        const finalBalanceAdapter = await token.balanceOf(myOFTAdapter.address)
+        expect(finalBalanceAdapter).eql(tokensToSend)
     })
 })

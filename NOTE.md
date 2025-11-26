@@ -48,14 +48,14 @@ oftAdapter: {
 Deploy MeetAdapter to bsc
 
 ```bash
+$ rm -rf ./deployments/ 
+
 $ pnpm hardhat lz:deploy --tags MeetAdapter --networks bsc
 ```
 
 ## Deploy Meet on Ethereum
 
 ```bash
-$ rm -rf ./deployments/ 
-
 $ pnpm hardhat lz:deploy --tags Meet --networks ethereum
 ```
 
